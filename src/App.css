@@ -1,0 +1,78 @@
+.row {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.cell {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.cellHint {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 70px;
+  width: 48px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.cellSame {
+  color: #ddd;
+}
+
+.value {
+  border: 1px solid gray;
+  border-radius: 50%;
+  width: 48px;
+}
+
+.steps {
+  color: red;
+  width: 32px;
+}
+
+.c2 {
+  width: 64px;
+}
+
+.info {
+  width: 32px;
+}
+
+.ord {
+  color: red;
+}
+
+.l {
+  color: blue;
+}
+
+.tail {
+  color: green;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.blue {
+  color: blue;
+}
+
+.red {
+  color: red;
+}
+
+.green {
+  color: green;
+}
