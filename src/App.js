@@ -2,8 +2,16 @@ import { useEffect } from "react";
 import cn from "classnames";
 import "./App.css";
 import { BigNumber } from "bignumber.js";
+// import * as vis from 'vis-network'
 
 const assert = console.assert.bind(console);
+
+const el = document.createElement("script");
+el.setAttribute(
+  "src",
+  "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
+);
+document.head.appendChild(el);
 
 Array.prototype.sum = function () {
   return this.reduce((a, b) => a + b, 0);
@@ -218,33 +226,68 @@ const path = (n) => {
   return a;
 };
 
-const chains = r(1500).map(makeChain);
+// const chains = r(1500).map(makeChain);
 
 const t3 = (n) => base(n) * 3 ** (ord(n) + 1);
 
 const bt3 = (n) => bbase(n).times(BigNumber(3).pow(bord(n).plus(1)));
 
 const m = (n) => (base(t3(n) - 1) + 1) / 2;
-const bm = n => bbase(bt3(n).minus(1)).plus(1).dividedBy(2)
+const bm = (n) => bbase(bt3(n).minus(1)).plus(1).dividedBy(2);
+
+const om = (n) => n / base(n);
+const bom = (n) => BigNumber(n).div(bbase(BigNumber(n)));
+
+const mchain = (n) => {
+  if (n === 0) return [];
+  let r = [n];
+  do {
+    r.push(m(r.last()));
+  } while (r.last() !== 1);
+  return r;
+};
 
 // const o = r1(1000).mapToObject(m)
 // const o = r1(1000).mapToObject(t3);
 // console.log(o);
 
-// const s23 = r(300)
-//   .map((x) => BigNumber(3).pow(x).minus(1))
-//   .map(bord)
+const s23 = r(300)
+  .map((x) => BigNumber(3).pow(x).minus(1))
+  .map(bord)
   // .filter((x, i) => i % 2)
-// console.log(s23);
+  .map(Number);
+console.log(s23);
 
-const rrs = r(140).map(x => BigNumber(2).pow(x))
-console.log('xxx', rrs.map(x => {
-  const r = [x]
-  while(!r.last().isEqualTo(1)) {
-    r.push(bm(r.last()))
-  }
-  return r.map(Number)
-}))
+const rrs = r(140).map((x) => BigNumber(2).pow(x));
+console.log(
+  "xxx",
+  rrs.map(mchain).map((chain) => chain.map((x) => [x, base(x), ord(x)]))
+);
+// .map((x, i) => x.length / i))
+
+const xx = (p) => (3 ** (p + 2) - 3 + 4 * om(p + 1)) / (8 * om(p + 1));
+const bxx = (p) => {
+  const bp = BigNumber(p);
+  return BigNumber(3)
+    .pow(bp.plus(2))
+    .minus(3)
+    .plus(bom(bp.plus(1)).times(4))
+    .div(bom(bp.plus(1)).times(8));
+};
+
+const sa8p5 = r(30)
+  .map((i) => 8 * i + 5)
+  .map((a) =>
+    r(20)
+      .map((b) =>
+        BigNumber(a)
+          .times(BigNumber(3).pow(b + 1))
+          .plus(b % 2 === 0 ? 1 : 3)
+          .div(b % 2 === 0 ? 4 : 8)
+      )
+      .map(Number)
+      .map(Number)
+  );
 
 Object.assign(window, {
   r,
@@ -264,12 +307,64 @@ Object.assign(window, {
   bord,
   bbase,
   bt3,
-  bm
+  bm,
+  mchain,
+  om,
+  bom,
+  xx,
+  bxx,
 });
 
 function Chains() {
+  useEffect(() => {
+    setTimeout(() => {
+      const range = r1(100);
+      const chains = range.map(mchain);
+      console.log("chains", chains);
+      var nodes = new window.vis.DataSet(
+        range.map((n) => {
+          const level = Math.min(
+            ...chains.map((chain) =>
+              chain.indexOf(n) !== -1
+                ? chain.length - chain.indexOf(n)
+                : Infinity
+            )
+          );
+          return {
+            id: n,
+            label: `${n.toString()} (${base(t3(n) - 1)}) [${level}]`,
+            level,
+            // color: `rgb(${256 / level}, 0, 0)`,
+            // mass: 1 / (level === 1 ? 1 : Math.log(level)),
+          };
+        })
+      );
+
+      const edges = [];
+      chains.forEach((chain) => {
+        for (let i = 1; i < chain.length; i++) {
+          const from = chain[i - 1];
+          const to = chain[i];
+          if (!edges.find((e) => e.from === from && e.to === to)) {
+            edges.push({ from, to });
+          }
+        }
+      });
+
+      const visEdges = new window.vis.DataSet(edges);
+
+      var container = document.getElementById("graph");
+      var data = {
+        nodes: nodes,
+        edges: visEdges,
+      };
+      var options = {};
+      var network = new window.vis.Network(container, data, options);
+    }, 1000);
+  }, []);
   return (
     <div>
+      <div id="graph" />
       {/* <div>
         {r(1000).map((n) =>
           n < 2 ? null : (
@@ -292,7 +387,7 @@ function Chains() {
           )
         )}
       </div> */}
-      {chains.map((chain, n) =>
+      {/* {chains.map((chain, n) =>
         n === 0 ? null : (
           <div className="row" id={`chain_${chain[0]}`}>
             <div className="cell info l">{chain.length - 2}</div>
@@ -310,7 +405,7 @@ function Chains() {
             <div className="cell info ord">{ord(chain.last())}</div>
           </div>
         )
-      )}
+      )} */}
     </div>
   );
 }
